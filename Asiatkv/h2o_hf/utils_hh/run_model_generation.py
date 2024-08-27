@@ -22,14 +22,14 @@ print("################## Generated Context with Full Cache ###################"
 
 print(result)
 print("loading checkpoint")
-checkpoint = copy.deepcopy(model.state_dict())
-config = AutoConfig.from_pretrained(model_path)
-config.heavy_ratio = 0.1
-config.recent_ratio = 0.1
-model = convert_kvcache_llama_heavy_recent(model, config)
-checkpoint = copy.deepcopy(model.state_dict())
-model.load_state_dict(checkpoint)
-generate_ids_hh = model.generate(input_ids, max_new_tokens=64)
-result_hh = tokenizer.batch_decode(generate_ids_hh, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
-print("################## Generated Context with Heavy Hitter Oracle ###################")
-print(result_hh)
+# checkpoint = copy.deepcopy(model.state_dict())
+# config = AutoConfig.from_pretrained(model_path)
+# config.heavy_ratio = 0.1
+# config.recent_ratio = 0.1
+# model = convert_kvcache_llama_heavy_recent(model, config)
+# checkpoint = copy.deepcopy(model.state_dict())
+# model.load_state_dict(checkpoint)
+# generate_ids_hh = model.generate(input_ids, max_new_tokens=64)
+# result_hh = tokenizer.batch_decode(generate_ids_hh, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+# print("################## Generated Context with Heavy Hitter Oracle ###################")
+# print(result_hh)
