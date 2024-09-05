@@ -178,7 +178,7 @@ class LlamaAttention_heavy_hitter(nn.Module):
 
         if not output_attentions:
             attn_weights = None
-        print(f"past_key_value: {past_key_value}")
+        
         print("1111111111111111111111111111111")
         return attn_output, attn_weights, past_key_value
 
