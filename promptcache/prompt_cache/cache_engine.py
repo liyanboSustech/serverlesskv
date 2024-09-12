@@ -344,7 +344,7 @@ class CacheEngine:
     schemas: Dict[str, SchemaCache]
 
     prompt_cache: PromptCache
-
+    
     def __init__(self, max_ctx_length: int, lm: LanguageModel, target_device=None):
 
         self.lm = lm
