@@ -2,9 +2,9 @@ from typing import List, Dict,Union,Tuple, Optional
 import torch
 import gc
 import itertools
-from .schema import TokenSequence, UnionModule, Schema, Path, Module
-from .model import LanguageModel
-
+from schema import TokenSequence, UnionModule, Schema, Path, Module
+from model import LanguageModel
+import time
 
 KVCache = List[Tuple[torch.Tensor, torch.Tensor]]
 
@@ -66,7 +66,7 @@ class PromptCache:
     num_head: int
     head_dim: int
     device_cache: KVCache
-
+    
     def __init__(self, max_ctx_length: int, num_layers: int, num_head: int, head_dim: int, target_device: torch.device):
 
         self.max_ctx_length = max_ctx_length
@@ -81,8 +81,9 @@ class PromptCache:
             (torch.empty(num_head, max_ctx_length, head_dim, device=target_device, dtype=torch.half),  # key
              torch.empty(num_head, max_ctx_length, head_dim, device=target_device, dtype=torch.half)) for _ in
             range(num_layers)]
-
-        # print(num_head, max_ctx_length, head_dim)
+        
+        # the timestamp of the cache of every layer
+        self.cache_times = [time.time() for _ in range(num_layers)]
 
         # stores staged modules
         self.staged = []
@@ -128,7 +129,7 @@ class PromptCache:
 
                 k_cache_tgt[:, st:ed, :].copy_(k_cache_src, non_blocking=True)
                 v_cache_tgt[:, st:ed, :].copy_(v_cache_src, non_blocking=True)
-
+                self.cache_times[i] = time.time()
             offset += len(m)
 
         # re-organize the cache
@@ -143,7 +144,25 @@ class PromptCache:
         return [(self.device_cache[i][0][:, :self.length, :],
                  self.device_cache[i][1][:, :self.length, :])
                 for i in range(len(self.device_cache))]
+    
+    def delete_kvcache_by_ratio(self, evciting_ratio: float):
+        assert 0 <= evciting_ratio <= 1
+        num_to_delete = int(len(self.cache_times) * (evciting_ratio / 100))
+        
+        if num_to_delete == 0:
+            print("No KVCache to delete based on the percentage provided.")
+            return
                 
+        sorted_indices = sorted(range(len(self.cache_times)), key=lambda i: self.cache_times[i])
+
+        # 删除最早的 num_to_delete 个 KVCache 和时间戳
+        for i in sorted_indices[:num_to_delete]:
+            del self.device_cache[i]
+            del self.cache_times[i]
+                
+        print(f"Deleted {num_to_delete} KVCache entries, which is {evciting_ratio*100}% of the total.")    
+        
+            
 class SchemaCache:
     schema: Schema
     cache_l1: Dict[int, TokenSequenceCache]

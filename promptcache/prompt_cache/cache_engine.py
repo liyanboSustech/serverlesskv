@@ -48,7 +48,7 @@ def pad_batch(batch_list: List[List[int]], pad_id: int) -> Tuple[List[List[int]]
 
 
 class TokenSequenceCache:
-    # tokensequence是一个库，注意用来获取text：str的token_ids和position_ids
+    # tokensequence是一个库，主要用来获取text：str的token_ids和position_ids
     token_sequence: TokenSequence
     host_cache: KVCache
     device_cache: Optional[KVCache] = None
@@ -212,6 +212,8 @@ class SchemaCache:
 
                 elif type(e) == UnionModule:
                     for n in e.modules:
+                        # 这里的is_default是什么意思
+                        # is_default是一个bool值，如果e.scaffold_name == n.name and is_default_parent为True，那么is_default为True
                         is_default = e.scaffold_name == n.name and is_default_parent
 
                         if n.contains_union():

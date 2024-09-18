@@ -8,15 +8,15 @@ import os
 import datetime
 from tqdm import tqdm
 from benchmark.longbench import LongBench
-from .model import Llama2, Falcon, Mpt
-from cache import Prompt, CompactSpaces, read_file, CacheEngine, \
-    GenerationEngine, GenerationParameters
-
+from model import Llama2
+# , Falcon, Mpt
+from cache import CacheEngine
+from generation_engine import GenerationEngine, GenerationParameters
 from benchmark.benchmark_base import DATASET_LIST, SCHEMA_FILE_DIRECTORY
 from benchmark.squad_v2 import SquadV2
 from benchmark.multi_news import MultiNews
 from benchmark.ms_marco_v1_1 import MSMarcoV1
-
+from prompt import Prompt, read_file
 BENCHMARK_PATH = "./benchmark"
 
 
@@ -24,33 +24,40 @@ class Eval:
     def __init__(self, llm_config_path, dataset, enable_cache, use_cpu_for_inference=False,sharing_ratio=0.2, evicting_ratio=0.1):
         with open("./config/dataset_maxlen.json", 'r') as f:
             self.dataset_maxlen = json.load(f)
-
+        print("start to loading llm config")
         with open(llm_config_path, 'r') as f:
             self.llm_config = json.load(f)
+        print("finish loading llm config")
         self.enable_cache = enable_cache
         self.use_cpu_for_inference = use_cpu_for_inference
         self.sharing_ratio = sharing_ratio
+        print("sharing ratio: ", self.sharing_ratio)
         self.evicting_ratio = evicting_ratio
+        print("evicting ratio: ", self.evicting_ratio)
         self.model_name = self.llm_config["name"]
-        if "llama" in self.model_name:
-            self.model_name = "llama"
-            self.lm_for_caching = Llama2(name=self.llm_config['name'], device_map="auto", load_in_8bit=True)
-        elif "falcon" in self.model_name:
-            self.model_name = "falcon"
-            self.lm_for_caching = Falcon(name=self.llm_config['name'], device_map="auto", load_in_8bit=True)
-        elif "mpt" in self.model_name:
-            self.model_name = "mpt"
-            self.lm_for_caching = Mpt(name=self.llm_config['name'], device_map="auto", load_in_8bit=True)
+        if "Llama" in self.model_name:
+            self.model_name = "Llama"
+            # need accelerate and bitsandbytes
+            # self.lm_for_caching = Llama2(name=self.llm_config['name'], device_map="auto", load_in_8bit=True)
+            
+            self.lm_for_caching = Llama2(name=self.llm_config['name'], device_map="auto")
+            
+        # elif "falcon" in self.model_name:
+        #     self.model_name = "falcon"
+        #     self.lm_for_caching = Falcon(name=self.llm_config['name'], device_map="auto", load_in_8bit=True)
+        # elif "mpt" in self.model_name:
+        #     self.model_name = "mpt"
+        #     self.lm_for_caching = Mpt(name=self.llm_config['name'], device_map="auto", load_in_8bit=True)
         else:
             raise ValueError("Invalid model name")
 
         if self.use_cpu_for_inference:
-            if "llama" in self.model_name:
+            if "Llama" in self.model_name:
                 self.lm = Llama2(name=self.llm_config['name'], device_map=None)
-            elif "falcon" in self.model_name:
-                self.lm = Falcon(name=self.llm_config['name'], device_map=None)
-            elif "mpt" in self.model_name:
-                self.lm = Mpt(name=self.llm_config['name'], device_map=None)
+            # elif "falcon" in self.model_name:
+            #     self.lm = Falcon(name=self.llm_config['name'], device_map=None)
+            # elif "mpt" in self.model_name:
+            #     self.lm = Mpt(name=self.llm_config['name'], device_map=None)
         else:
             self.lm = self.lm_for_caching
 
@@ -149,6 +156,8 @@ class Eval:
             case "repobench-p":
                 self.dataset = LongBench("repobench-p")
 
+        
+        print("initiating dataset")
         # for testing purpose, limit the entries to a small number
         self.dataset.init()
 
@@ -296,8 +305,9 @@ def main(llm_config_path: str = os.path.join('./', "config/llm_config_llama2_7b.
          test_latency=False,
          use_cpu_for_inference=False,
          verbose=False):
+    print("running main")
     seed_everything(42)
-
+    print("loading eval")
     eval = Eval(llm_config_path, dataset, enable_cache, use_cpu_for_inference,
                 sharing_ratio=args.sharing_ratio, evicting_ratio=args.evicting_ratio)
     

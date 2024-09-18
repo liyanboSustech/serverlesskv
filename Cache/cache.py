@@ -1,7 +1,8 @@
 import argparse
 import torch
-from .model import LanguageModel
-from .schema import Schema, Module, ModuleRef, Prompt
+from model import LanguageModel
+from schema import Schema, Module
+from prompt import ModuleRef, Prompt
 from typing import List, Tuple, Dict, Union, Optional
 import itertools
 import gc
@@ -13,7 +14,7 @@ class CacheEngine:
 
     prompt_cache: PromptCache
     
-    def __init__(self, max_ctx_length: int, lm: LanguageModel, target_device=None,sharing_ratio=0.5, evicting_ratio=0.1):
+    def __init__(self, max_ctx_length: int, lm: LanguageModel, target_device=None,sharing_ratio=0, evicting_ratio=0):
 
         self.lm = lm
         self.schemas = dict()
@@ -198,6 +199,8 @@ class CacheEngine:
         num_cache = len(cache)
         
         num_cache_evict = int(num_cache * evicting_ratio)
+        
+        # 我要删除
             
         
             

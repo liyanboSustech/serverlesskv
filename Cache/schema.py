@@ -11,8 +11,8 @@ import lxml.etree
 
 from typing import List, Union, cast, Any, Optional
 
-from .model import LanguageModel
-from .prompt import compact_surrounding_spaces
+from model import LanguageModel
+from prompt import compact_surrounding_spaces
 
 
 def trim_with_padding(text: str, padding: int = 1) -> str:

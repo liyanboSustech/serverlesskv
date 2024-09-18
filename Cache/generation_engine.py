@@ -5,7 +5,7 @@ from typing import Optional, Generator, List, Tuple
 
 import torch
 
-from .cache_engine import KVCache
+from cache_engine import KVCache
 
 from transformers.generation.logits_process import (
     LogitsProcessorList,
@@ -15,7 +15,7 @@ from transformers.generation.logits_process import (
     TopPLogitsWarper,
 )
 import termcolor
-from .model import LanguageModel
+from model import LanguageModel
 
 
 @dataclass

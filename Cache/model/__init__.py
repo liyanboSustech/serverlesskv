@@ -6,10 +6,10 @@ import re
 from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, PreTrainedTokenizer, \
     PretrainedConfig, PreTrainedModel, CodeLlamaTokenizer,LlamaForCausalLM
 
-from promptcache.model.falcon import FalconForCausalLM
-from prompt_cache.model.llama2 import LlamaForCausalLM
-from promptcache.model.mpt import MptForCausalLM
-from prompt_cache.prompt import Preprocessor, escape_xml, PreprocessorList
+# from Cache.model.falcon import FalconForCausalLM
+from .llama2 import LlamaForCausalLM
+# from Cache.model.mpt import MptForCausalLM
+from prompt import Preprocessor, escape_xml, PreprocessorList
 
 
 # supported models
@@ -203,52 +203,52 @@ class Llama2(LanguageModel):
         return self.formatter
 
 
-class Falcon(LanguageModel):
-    def __init__(self, name="tiiuae/falcon-7b-instruct", **kwargs):
-        tokenizer = AutoTokenizer.from_pretrained(name)
-        model = FalconForCausalLM.from_pretrained(name, **kwargs)
+# class Falcon(LanguageModel):
+#     def __init__(self, name="tiiuae/falcon-7b-instruct", **kwargs):
+#         tokenizer = AutoTokenizer.from_pretrained(name)
+#         model = FalconForCausalLM.from_pretrained(name, **kwargs)
 
-        def rep(prompt: str) -> str:
-            return prompt.replace("\r\n", "\n").replace("\n\n", "\n")
+#         def rep(prompt: str) -> str:
+#             return prompt.replace("\r\n", "\n").replace("\n\n", "\n")
 
-        # name = "falcon",
-        # roles = ("User", "Assistant"),
-        # messages = [],
-        # sep_style = SeparatorStyle.RWKV,
-        # sep = "\n",
-        # sep2 = "<|endoftext|>",
-        # stop_str = "\nUser",
+#         # name = "falcon",
+#         # roles = ("User", "Assistant"),
+#         # messages = [],
+#         # sep_style = SeparatorStyle.RWKV,
+#         # sep = "\n",
+#         # sep2 = "<|endoftext|>",
+#         # stop_str = "\nUser",
 
-        conv = FormatConversation(
-            system=("", "\n\n", ""),
-            user=("User: ", "\n\nAssistant:"),
-            assistant=(" ", "\n\n"))
-        #
-        # conv = FormatConversation(
-        #     system=("", "\n\n", ""),
-        #     user=("<|prompt|>", "<|endoftext|>"),
-        #     assistant=("<|answer|>", "<|endoftext|>"))
+#         conv = FormatConversation(
+#             system=("", "\n\n", ""),
+#             user=("User: ", "\n\nAssistant:"),
+#             assistant=(" ", "\n\n"))
+#         #
+#         # conv = FormatConversation(
+#         #     system=("", "\n\n", ""),
+#         #     user=("<|prompt|>", "<|endoftext|>"),
+#         #     assistant=("<|answer|>", "<|endoftext|>"))
 
-        self.formatter = PreprocessorList([
-            rep, conv
-        ])
+#         self.formatter = PreprocessorList([
+#             rep, conv
+#         ])
 
-        stop_token_ids = [0,
-                          1,
-                          2,
-                          3,
-                          4,
-                          5,
-                          6,
-                          7,
-                          8,
-                          9,
-                          10,
-                          11, ]
+#         stop_token_ids = [0,
+#                           1,
+#                           2,
+#                           3,
+#                           4,
+#                           5,
+#                           6,
+#                           7,
+#                           8,
+#                           9,
+#                           10,
+#                           11, ]
 
-        stop_str = ["<|endoftext|>", "\nUser"]
+#         stop_str = ["<|endoftext|>", "\nUser"]
 
-        super().__init__(name, model, tokenizer, stop_token_ids, stop_str)
+#         super().__init__(name, model, tokenizer, stop_token_ids, stop_str)
 
     def get_formatter(self) -> Callable[[str], str]:
         return self.formatter
@@ -258,34 +258,34 @@ class Falcon(LanguageModel):
         return self.hf_model.config.num_hidden_layers, 1, head_dim
 
 
-class Mpt(LanguageModel):
-    def __init__(self, name="mosaicml/mpt-7b-chat", **kwargs):
-        # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-neox-20b", trust_remote_code=True)
-        tokenizer = AutoTokenizer.from_pretrained(name, trust_remote_code=True)
+# class Mpt(LanguageModel):
+#     def __init__(self, name="mosaicml/mpt-7b-chat", **kwargs):
+#         # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-neox-20b", trust_remote_code=True)
+#         tokenizer = AutoTokenizer.from_pretrained(name, trust_remote_code=True)
 
-        model = MptForCausalLM.from_pretrained(name, max_seq_len=8192,
-                                               **kwargs)
+#         model = MptForCausalLM.from_pretrained(name, max_seq_len=8192,
+#                                                **kwargs)
 
-        conv = FormatConversation(
-            system=("<|im_start|>system\n", "<|im_end|>\n", ""),
-            user=("<|im_start|>user\n", "<|im_end|>\n<|im_start|>assistant\n"),
-            assistant=("", "<|im_end|>\n"))
+#         conv = FormatConversation(
+#             system=("<|im_start|>system\n", "<|im_end|>\n", ""),
+#             user=("<|im_start|>user\n", "<|im_end|>\n<|im_start|>assistant\n"),
+#             assistant=("", "<|im_end|>\n"))
 
-        self.formatter = conv
-        self.use_full_position_ids = True
+#         self.formatter = conv
+#         self.use_full_position_ids = True
 
-        stop_token_ids = [50278, 0]
-        stop_str = []
+#         stop_token_ids = [50278, 0]
+#         stop_str = []
 
-        super().__init__(name, model, tokenizer, stop_token_ids, stop_str)
+#         super().__init__(name, model, tokenizer, stop_token_ids, stop_str)
 
-    def get_formatter(self) -> Callable[[str], str]:
-        return self.formatter
+#     def get_formatter(self) -> Callable[[str], str]:
+#         return self.formatter
 
-    # https://huggingface.co/mosaicml/mpt-7b-chat/blob/main/configuration_mpt.py
-    def get_cache_shape(self) -> Tuple[int, int, int]:
-        head_dim = self.hf_model.config.d_model // self.hf_model.config.n_heads,
-        return self.hf_model.config.n_layers, self.hf_model.config.n_heads, head_dim[0]
+#     # https://huggingface.co/mosaicml/mpt-7b-chat/blob/main/configuration_mpt.py
+#     def get_cache_shape(self) -> Tuple[int, int, int]:
+#         head_dim = self.hf_model.config.d_model // self.hf_model.config.n_heads,
+#         return self.hf_model.config.n_layers, self.hf_model.config.n_heads, head_dim[0]
     #
     # def store_k_hook(self, v_cache: torch.Tensor) -> torch.Tensor:
     #     # batch, n_layers, seq_len, head_dim = v_cache.shape
