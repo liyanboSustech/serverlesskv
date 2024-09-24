@@ -55,6 +55,7 @@ import re
 from .benchmark_base import Benchmark, Entry
 from .utils import XMLSchemaBuilder
 from datasets import load_dataset
+from datasets import load_from_disk
 import os
 
 _system_description = "Below are a series of dialogues between various people and an AI assistant. The AI tries to be helpful, polite, \
@@ -66,6 +67,7 @@ useful."
 _user_description = "For the upcoming interaction, I would like you to answer some questions about the document."
 _assistant_description = "Sure. I have read the document. Please give me any question."
 
+LOCAL_DIR = "/dataset/crosspipe/LongBench/"
 
 def escape_tags(input_str):
     # pattern = r'<(?P<content>.*?)>'
@@ -87,8 +89,8 @@ class LongBench(Benchmark):
         Download (one time) and load the dataset to run;
         Preprocess the dataset to be organized in the `Entry` format.
         """
-        self.dataset = load_dataset('THUDM/LongBench', self.dataset_name)
-
+        # self.dataset = load_dataset('THUDM/LongBench', self.dataset_name)
+        self.dataset = load_from_disk(os.path.join(LOCAL_DIR, self.dataset_name))
         count = 0
         for split in self.dataset.values():
             for item in split:

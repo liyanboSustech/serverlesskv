@@ -153,7 +153,6 @@ class GenerationEngine:
 
             last_token_logits = logits_processor(tmp_output_ids, logits[:, -1, :])[0]
 
-            ccc = []
 
             if params.temperature < 1e-5 or params.top_p < 1e-8:  # greedy
                 new_token_id = int(torch.argmax(last_token_logits))

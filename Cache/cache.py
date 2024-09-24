@@ -146,6 +146,7 @@ class CacheEngine:
         position_ids = list(itertools.chain(*argument_pos_ids_list))
 
         if no_cache:
+            print("no cache")
             orig_input_ids = list(itertools.chain(*orig_ids_list))
             orig_position_ids = list(itertools.chain(*orig_pos_ids_list))
 
@@ -164,7 +165,7 @@ class CacheEngine:
 
             return orig_input_ids, vv, cache_time, None
         else:
-
+            print("using cache")
             used_seq_caches = []
 
             for s in used_sequences:
