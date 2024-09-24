@@ -40,7 +40,7 @@ class Eval:
             # need accelerate and bitsandbytes
             # self.lm_for_caching = Llama2(name=self.llm_config['name'], device_map="auto", load_in_8bit=True)
             
-            self.lm_for_caching = Llama2(name=self.llm_config['name'], device_map="auto")
+            self.lm_for_caching = Llama2(name=self.llm_config['name'], device_map="cuda:0")
             
         # elif "falcon" in self.model_name:
         #     self.model_name = "falcon"

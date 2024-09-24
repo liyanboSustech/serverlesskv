@@ -167,7 +167,6 @@ class TokenSequence(Element):
         # 这里是调用Element类的__init__方法
         # Element类的__init__方法接受两个参数，一个是offset，一个是name
         # 这里的name是None
-        # 所以这里调用的是Element类的__init__方法
         super().__init__(offset)
 
         self.text = text

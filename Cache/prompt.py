@@ -140,7 +140,7 @@ class Argument:
 class Prompt(ModuleRef):
     """This class is used to represent a prompt."""
     schema: str
-    text: str
+    text: str 
 
     preproc: List[Preprocessor]
 

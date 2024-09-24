@@ -96,7 +96,7 @@ class LongBench(Benchmark):
                     break
                 id = item["_id"]
                 schema_name = f"schema_{id}"
-
+                
                 fmt_schema = self.dataset_prompt["context"].format(context=escape_tags(item["context"]))
 
                 schema_content = f"""

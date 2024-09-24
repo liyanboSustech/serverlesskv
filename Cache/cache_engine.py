@@ -5,6 +5,7 @@ import itertools
 from schema import TokenSequence, UnionModule, Schema, Path, Module
 from model import LanguageModel
 import time
+# from transformers.models.llama.modeling_llama 
 
 KVCache = List[Tuple[torch.Tensor, torch.Tensor]]
 
@@ -20,6 +21,7 @@ def pad_batch(batch_list: List[List[int]], pad_id: int) -> Tuple[List[List[int]]
     return padded_batch, mask_batch
 
 class TokenSequenceCache:
+    # tokensequence 库能获取的是一个text:str的token_ids和position_ids
     # tokensequence是一个库，注意用来获取text：str的token_ids和position_ids
     token_sequence: TokenSequence
     host_cache: KVCache
@@ -59,6 +61,7 @@ class TokenSequenceCache:
 
 
 class PromptCache:
+    # PromptCache的作用是将TokenSequenceCache的cache存储到device_cache中
     staged: List[TokenSequenceCache]
     length: int
 
@@ -76,7 +79,6 @@ class PromptCache:
         # 这里的num_layer和batchsize有什么关系？
         # num_layer是transformer的层数，batchsize是多少个token sequence
         # 获得的device_cache是一个四维的tensor，第一维是num_layers，第二维是num_head，第三维是max_ctx_length，第四维是head_dim
-        # 不需要batchsize嘛？
         self.device_cache = [
             (torch.empty(num_head, max_ctx_length, head_dim, device=target_device, dtype=torch.half),  # key
              torch.empty(num_head, max_ctx_length, head_dim, device=target_device, dtype=torch.half)) for _ in
@@ -97,7 +99,7 @@ class PromptCache:
         # cache rearrangement -> becomes new layout
         # module_ordered的作用是将modules按照usage_counter从大到小排序
         modules_ordered = sorted(modules, key=lambda e: e.usage_counter, reverse=True)
-
+ 
         retained = []
         # 从staged中找到和modules_ordered中相同的部分的目的是为了将这部分的cache保留下来
         for (m, m_prev) in zip(modules_ordered, self.staged):
@@ -119,14 +121,16 @@ class PromptCache:
             ed = st + len(m)
 
             for i in range(len(self.device_cache)):
+                # 我先获取到了device_cache中的k和v
                 k_cache_tgt, v_cache_tgt = self.device_cache[i]
+                # 再获取到了m中的k和v
                 k_cache_src, v_cache_src = m.cache[i]
 
                 # print('k_src', k_cache_src.shape)
                 # print('v_src', v_cache_src.shape)
                 # print('k_tgt', k_cache_tgt.shape)
                 # print('v_tgt', v_cache_tgt.shape)
-
+                # 最后将m中的k和v复制到device_cache中，同时记录时间戳
                 k_cache_tgt[:, st:ed, :].copy_(k_cache_src, non_blocking=True)
                 v_cache_tgt[:, st:ed, :].copy_(v_cache_src, non_blocking=True)
                 self.cache_times[i] = time.time()
@@ -186,7 +190,6 @@ class SchemaCache:
         # Get all possible L1 scaffolds
         stack = list()
         paths_l1 = [Path(), ]
-        # contains_union()作用是
         if self.schema.contains_union():
             stack.append((list(), True, self.schema))
 

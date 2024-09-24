@@ -250,12 +250,12 @@ class Llama2(LanguageModel):
 
 #         super().__init__(name, model, tokenizer, stop_token_ids, stop_str)
 
-    def get_formatter(self) -> Callable[[str], str]:
-        return self.formatter
+    # def get_formatter(self) -> Callable[[str], str]:
+    #     return self.formatter
 
-    def get_cache_shape(self) -> Tuple[int, int, int]:
-        head_dim = self.hf_model.config.hidden_size // self.hf_model.config.num_attention_heads
-        return self.hf_model.config.num_hidden_layers, 1, head_dim
+    # def get_cache_shape(self) -> Tuple[int, int, int]:
+    #     head_dim = self.hf_model.config.hidden_size // self.hf_model.config.num_attention_heads
+    #     return self.hf_model.config.num_hidden_layers, 1, head_dim
 
 
 # class Mpt(LanguageModel):
