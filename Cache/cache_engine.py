@@ -309,6 +309,7 @@ class SchemaCache:
         torch.cuda.empty_cache()
         # upload to gpu.
 
+
     def get_cache_l1(self, seq: TokenSequence) -> Optional[TokenSequenceCache]:
         seq_id = id(seq)
         if seq_id not in self.cache_l1:
