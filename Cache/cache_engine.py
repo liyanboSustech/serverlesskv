@@ -32,6 +32,7 @@ class TokenSequenceCache:
     def __init__(self, seq: TokenSequence, cache: KVCache):
         self.token_sequence = seq
         self.host_cache = cache
+        # usage_counter
         self.usage_counter = 0
 
     def inc_usage_counter(self):

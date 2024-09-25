@@ -66,7 +66,7 @@ assistant is practical and really does its best, and doesn't let caution get too
 useful."
 _user_description = "For the upcoming interaction, I would like you to answer some questions about the document."
 _assistant_description = "Sure. I have read the document. Please give me any question."
-
+# directory of downloaded datasets
 LOCAL_DIR = "/dataset/crosspipe/LongBench/"
 
 def escape_tags(input_str):

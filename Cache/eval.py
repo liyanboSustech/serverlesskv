@@ -159,6 +159,7 @@ class Eval:
         
         print("initiating dataset")
         # for testing purpose, limit the entries to a small number
+        # get schema prompt answer here
         self.dataset.init()
 
         # create result directory
@@ -247,12 +248,17 @@ class Eval:
                                              max_tokens=self.llm_config.get("max_tokens", 3500))
 
             for entry in entries:
-                print(entry.prompt)
+#                 Entry(schema=schema_5b8d6fdd30a297e508ebb484f172ca5bce8d31b340eb3506.xml, 
+#                       prompt=<prompt schema='schema_5b8d6fdd30a297e508ebb484f172ca5bce8d31b340eb3506'><context/>
+#                 Now, answer the question based on the story as concisely as you can, using a single phrase if possible. Do not provide any explanation. Question: Where does the witch live?
+#                       </user><assistant>The concise answer is:</prompt>
+#                 , answer=['The Atlas Mountains'])
                 prompt = Prompt(entry.prompt, self.preproc)
                 no_cache = not self.enable_cache
                 token_ids, position_ids, cache_time, cache = self.cache_engine.process(prompt, no_cache=no_cache,
                                                                                        return_full_position_ids=self.lm.use_full_position_ids)
                 if no_cache:
+                    print("eval no cache , assert cache is None")
                     assert cache is None
                     # for debugging
                     if verbose:
