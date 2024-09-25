@@ -179,7 +179,9 @@ class SchemaCache:
         self.schema = schema
         self.lm = lm
         self.cache_l1 = dict()
-        self.cache_l2 = dict()
+        self.hit_count = 0
+        self.miss_count = 0
+        # self.cache_l2 = dict()
         self.target_device = lm.device if target_device is None else target_device
         # no_cache 默认是False，那么if not no_cache就是True
         if not no_cache:
@@ -310,19 +312,32 @@ class SchemaCache:
         # upload to gpu.
 
 
-    def get_cache_l1(self, seq: TokenSequence) -> Optional[TokenSequenceCache]:
+    def get_cache_and_hit_rate(self, seq: TokenSequence) -> Optional[TokenSequenceCache]:
         seq_id = id(seq)
         if seq_id not in self.cache_l1:
-            return None
-        return self.cache_l1[seq_id]
+            print("Don't hit the cache")
+            self.miss_count += 1  # 记录未命中
+            total_accesses = self.hit_count + self.miss_count
+            hit_rate = self.hit_count / total_accesses if total_accesses > 0 else 0
+            miss_rate = self.miss_count / total_accesses if total_accesses > 0 else 0
+            print(f"Hit Rate: {hit_rate:.2f}, Miss Rate: {miss_rate:.2f}")  # 输出当前命中率和未命中率
+            return None , hit_rate , miss_rate
+        else:
+            print("Hit the cache")
+            self.hit_count += 1  # 记录命中
+            total_accesses = self.hit_count + self.miss_count
+            hit_rate = self.hit_count / total_accesses if total_accesses > 0 else 0
+            miss_rate = self.miss_count / total_accesses if total_accesses > 0 else 0
+            print(f"Hit Rate: {hit_rate:.2f}, Miss Rate: {miss_rate:.2f}")  # 输出当前命中率和未命中率
+            return self.cache_l1[seq_id] , hit_rate , miss_rate
 
-    def get_cache_l2(self, seq1: TokenSequence, seq2: TokenSequence) -> Optional[
-        Tuple[TokenSequenceCache, TokenSequenceCache]]:
+    # def get_cache_l2(self, seq1: TokenSequence, seq2: TokenSequence) -> Optional[
+    #     Tuple[TokenSequenceCache, TokenSequenceCache]]:
 
-        seq1_id, seq2_id = max(id(seq1), id(seq2)), min(id(seq1), id(seq2))
-        if (seq1_id, seq2_id) not in self.cache_l2:
-            return None
-        return self.cache_l2[(seq1_id, seq2_id)]
+    #     seq1_id, seq2_id = max(id(seq1), id(seq2)), min(id(seq1), id(seq2))
+    #     if (seq1_id, seq2_id) not in self.cache_l2:
+    #         return None
+    #     return self.cache_l2[(seq1_id, seq2_id)]
 
 # class CacheEngine:
 #     lm: LanguageModel

@@ -166,8 +166,6 @@ class GenerationEngine:
                 # indices = torch.multinomial(probs, num_samples=2)
                 # ccc = [int(token) for token in indices.tolist()]
 
-            # new_token_id = ccc[1]
-
             output_ids.append(new_token_id)
             new_output_ids.append(new_token_id)
 

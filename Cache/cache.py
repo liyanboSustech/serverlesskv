@@ -163,13 +163,13 @@ class CacheEngine:
 
             vv = list(range(len(orig_position_ids)))
 
-            return orig_input_ids, vv, cache_time, None
+            return orig_input_ids, vv, cache_time, None,0.0,0.0
         else:
             print("using cache")
             used_seq_caches = []
 
             for s in used_sequences:
-                seq_cache = cached.get_cache_l1(s)
+                seq_cache ,hit_rate,miss_rate = cached.get_cache_and_hit_rate(s)
 
                 seq_cache.inc_usage_counter()
                 used_seq_caches.append(seq_cache)
@@ -192,16 +192,16 @@ class CacheEngine:
                 position_ids = orig_position_ids + position_ids
 
             # print(orig_position_ids)
-            return input_ids, position_ids, cache_time, cache
+            return input_ids, position_ids, cache_time, cache ,hit_rate,miss_rate
     
-    def evict(self, evicting_ratio ):
-        cache = self.prompt_cache.cache
+    # def evict(self, evicting_ratio ):
+    #     cache = self.prompt_cache.cache
         
-        num_cache = len(cache)
+    #     num_cache = len(cache)
         
-        num_cache_evict = int(num_cache * evicting_ratio)
+    #     num_cache_evict = int(num_cache * evicting_ratio)
         
-        # 我要删除
+    #     # 我要删除
             
         
             

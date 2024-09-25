@@ -24,5 +24,6 @@
     "squad_v2": 32,
     "wiki_qa": 128,
     "pubmd_qa": 128,
-    "ms_marco": 32
+    "ms_marco": 32,
+    "mixed_datasets": 32
 }

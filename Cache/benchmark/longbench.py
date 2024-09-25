@@ -66,6 +66,7 @@ assistant is practical and really does its best, and doesn't let caution get too
 useful."
 _user_description = "For the upcoming interaction, I would like you to answer some questions about the document."
 _assistant_description = "Sure. I have read the document. Please give me any question."
+
 # directory of downloaded datasets
 LOCAL_DIR = "/dataset/crosspipe/LongBench/"
 
@@ -92,8 +93,9 @@ class LongBench(Benchmark):
         # self.dataset = load_dataset('THUDM/LongBench', self.dataset_name)
         self.dataset = load_from_disk(os.path.join(LOCAL_DIR, self.dataset_name))
         count = 0
-        for split in self.dataset.values():
-            for item in split:
+        # for split in self.dataset.values():
+        #     for item in split:
+        for item in self.dataset:
                 if limit_entries is not None and count >= limit_entries:
                     break
                 id = item["_id"]

@@ -60,9 +60,10 @@ class Eval:
             #     self.lm = Mpt(name=self.llm_config['name'], device_map=None)
         else:
             self.lm = self.lm_for_caching
-
+        print("device = ", self.lm.device)
         self.cache_engine = CacheEngine(self.llm_config.get("max_ctx_length", 4096), self.lm_for_caching,
                                         target_device=self.lm.device,sharing_ratio=self.sharing_ratio,evicting_ratio=self.evicting_ratio)
+        
         self.gen_engine = GenerationEngine(self.lm)
         self.preproc = [
             # CompactSpaces(),
@@ -155,6 +156,9 @@ class Eval:
 
             case "repobench-p":
                 self.dataset = LongBench("repobench-p")
+                
+            case "mixed_datasets":
+                self.dataset = LongBench("mixed_datasets")
 
         
         print("initiating dataset")
@@ -194,7 +198,7 @@ class Eval:
 
             no_cache = not self.enable_cache
 
-            token_ids, position_ids, cache_time, cache = self.cache_engine.process(prompt, no_cache=no_cache,
+            token_ids, position_ids, cache_time, cache,hit_rate,miss_rate = self.cache_engine.process(prompt, no_cache=no_cache,
                                                                                    return_full_position_ids=self.lm.use_full_position_ids)
 
             if no_cache:
@@ -223,6 +227,8 @@ class Eval:
             result = {
                 "cache_time": cache_time,
                 "response_time": response_time,
+                "hit_rate": hit_rate,
+                "miss_rate": miss_rate
             }
             print(result)
             self.store_results(result)
@@ -237,7 +243,7 @@ class Eval:
         start = split_count * split[0]
         end = split_count * (split[0] + 1)
         print(f"Running benchmark on {self.dataset.dataset_name}, start: {start}, end: {end}")
-
+        # control the range of entries to be evaluated
         for i in tqdm(range(start, end)):
             entries = self.dataset.get_query((i, i + 1))
             for entry in entries:
@@ -255,10 +261,10 @@ class Eval:
 #                 , answer=['The Atlas Mountains'])
                 prompt = Prompt(entry.prompt, self.preproc)
                 no_cache = not self.enable_cache
-                token_ids, position_ids, cache_time, cache = self.cache_engine.process(prompt, no_cache=no_cache,
+                token_ids, position_ids, cache_time, cache ,hit_rate,miss_rate= self.cache_engine.process(prompt, no_cache=no_cache,
                                                                                        return_full_position_ids=self.lm.use_full_position_ids)
                 if no_cache:
-                    print("eval no cache , assert cache is None")
+                    print("eval no cache == True , assert cache is None")
                     assert cache is None
                     # for debugging
                     if verbose:
@@ -289,12 +295,14 @@ class Eval:
                     "cache_time": cache_time,
                     "response_time": response_time,
                     "answers": entry.answer,
-                    "response": resp
+                    "response": resp,
+                    "hit_rate": hit_rate,
+                    "miss_rate": miss_rate
                 }
                 self.store_results(result, split)
                 print("\n")
 
-            self.cache_engine.remove_all_schemas()
+            # self.cache_engine.remove_all_schemas()
 
 
 def seed_everything(seed):
@@ -308,7 +316,7 @@ def seed_everything(seed):
 
 
 def main(llm_config_path: str = os.path.join('./', "config/llm_config_llama2_7b.json"),
-         dataset: str = "narrativeqa", enable_cache=False, cache_batch_size=1, split=(0, 1),
+         dataset: str = "mixed_datasets", enable_cache=False, split=(0, 1),
          test_latency=False,
          use_cpu_for_inference=False,
          verbose=False):
