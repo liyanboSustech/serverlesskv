@@ -312,7 +312,7 @@ class SchemaCache:
         # upload to gpu.
 
 
-    def get_cache_and_hit_rate(self, seq: TokenSequence) -> Optional[TokenSequenceCache]:
+    def get_cache_and_hit_rate(self, seq: TokenSequence) -> Tuple[Optional[TokenSequenceCache], float, float]:
         seq_id = id(seq)
         if seq_id not in self.cache_l1:
             print("Don't hit the cache")

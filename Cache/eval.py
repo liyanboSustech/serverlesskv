@@ -3,7 +3,7 @@ import argparse
 import numpy as np
 import torch.cuda
 import fire
-import sys, json
+import json
 import os
 import datetime
 from tqdm import tqdm
@@ -13,9 +13,9 @@ from model import Llama2
 from cache import CacheEngine
 from generation_engine import GenerationEngine, GenerationParameters
 from benchmark.benchmark_base import DATASET_LIST, SCHEMA_FILE_DIRECTORY
-from benchmark.squad_v2 import SquadV2
-from benchmark.multi_news import MultiNews
-from benchmark.ms_marco_v1_1 import MSMarcoV1
+# from benchmark.squad_v2 import SquadV2
+# from benchmark.multi_news import MultiNews
+# from benchmark.ms_marco_v1_1 import MSMarcoV1
 from prompt import Prompt, read_file
 BENCHMARK_PATH = "./benchmark"
 
@@ -39,8 +39,8 @@ class Eval:
             self.model_name = "Llama"
             # need accelerate and bitsandbytes
             # self.lm_for_caching = Llama2(name=self.llm_config['name'], device_map="auto", load_in_8bit=True)
-            # device location is set to cuda:0
-            self.lm_for_caching = Llama2(name=self.llm_config['name'], device_map="cuda:0",torch_dtype=torch.float16)
+            
+            self.lm_for_caching = Llama2(name=self.llm_config['name'], device_map="cuda:0")
             
         # elif "falcon" in self.model_name:
         #     self.model_name = "falcon"
@@ -60,10 +60,9 @@ class Eval:
             #     self.lm = Mpt(name=self.llm_config['name'], device_map=None)
         else:
             self.lm = self.lm_for_caching
-        print("device = ", self.lm.device)
+
         self.cache_engine = CacheEngine(self.llm_config.get("max_ctx_length", 4096), self.lm_for_caching,
                                         target_device=self.lm.device,sharing_ratio=self.sharing_ratio,evicting_ratio=self.evicting_ratio)
-        
         self.gen_engine = GenerationEngine(self.lm)
         self.preproc = [
             # CompactSpaces(),
@@ -94,11 +93,11 @@ class Eval:
             raise ValueError("Dataset name cannot be None, valid dataset names are: " + ", ".join(DATASET_LIST))
 
         match dataset:
-            case "squad_v2":
-                self.dataset = SquadV2()
+            # case "squad_v2":
+            #     self.dataset = SquadV2()
 
-            case "multi_news":
-                self.dataset = MultiNews()
+            # case "multi_news":
+            #     self.dataset = MultiNews()
 
             case "narrativeqa":
                 self.dataset = LongBench("narrativeqa")
@@ -156,14 +155,10 @@ class Eval:
 
             case "repobench-p":
                 self.dataset = LongBench("repobench-p")
-                
-            case "mixed_datasets":
-                self.dataset = LongBench("mixed_datasets")
 
         
         print("initiating dataset")
         # for testing purpose, limit the entries to a small number
-        # get schema prompt answer here
         self.dataset.init()
 
         # create result directory
@@ -198,7 +193,7 @@ class Eval:
 
             no_cache = not self.enable_cache
 
-            token_ids, position_ids, cache_time, cache,hit_rate,miss_rate = self.cache_engine.process(prompt, no_cache=no_cache,
+            token_ids, position_ids, cache_time, cache = self.cache_engine.process(prompt, no_cache=no_cache,
                                                                                    return_full_position_ids=self.lm.use_full_position_ids)
 
             if no_cache:
@@ -227,8 +222,6 @@ class Eval:
             result = {
                 "cache_time": cache_time,
                 "response_time": response_time,
-                "hit_rate": hit_rate,
-                "miss_rate": miss_rate
             }
             print(result)
             self.store_results(result)
@@ -237,13 +230,12 @@ class Eval:
 
     def run(self, split, verbose=False):
         entry_count = self.dataset.get_entry_count()
-        print("entry_count:", entry_count)
         split_count = entry_count // split[1]
 
         start = split_count * split[0]
         end = split_count * (split[0] + 1)
         print(f"Running benchmark on {self.dataset.dataset_name}, start: {start}, end: {end}")
-        # control the range of entries to be evaluated
+
         for i in tqdm(range(start, end)):
             entries = self.dataset.get_query((i, i + 1))
             for entry in entries:
@@ -254,17 +246,12 @@ class Eval:
                                              max_tokens=self.llm_config.get("max_tokens", 3500))
 
             for entry in entries:
-#                 Entry(schema=schema_5b8d6fdd30a297e508ebb484f172ca5bce8d31b340eb3506.xml, 
-#                       prompt=<prompt schema='schema_5b8d6fdd30a297e508ebb484f172ca5bce8d31b340eb3506'><context/>
-#                 Now, answer the question based on the story as concisely as you can, using a single phrase if possible. Do not provide any explanation. Question: Where does the witch live?
-#                       </user><assistant>The concise answer is:</prompt>
-#                 , answer=['The Atlas Mountains'])
+                print(entry.prompt)
                 prompt = Prompt(entry.prompt, self.preproc)
                 no_cache = not self.enable_cache
-                token_ids, position_ids, cache_time, cache ,hit_rate,miss_rate= self.cache_engine.process(prompt, no_cache=no_cache,
+                token_ids, position_ids, cache_time, cache = self.cache_engine.process(prompt, no_cache=no_cache,
                                                                                        return_full_position_ids=self.lm.use_full_position_ids)
                 if no_cache:
-                    print("eval no cache == True , assert cache is None")
                     assert cache is None
                     # for debugging
                     if verbose:
@@ -295,14 +282,12 @@ class Eval:
                     "cache_time": cache_time,
                     "response_time": response_time,
                     "answers": entry.answer,
-                    "response": resp,
-                    "hit_rate": hit_rate,
-                    "miss_rate": miss_rate
+                    "response": resp
                 }
                 self.store_results(result, split)
                 print("\n")
 
-            # self.cache_engine.remove_all_schemas()
+            self.cache_engine.remove_all_schemas()
 
 
 def seed_everything(seed):
@@ -316,7 +301,7 @@ def seed_everything(seed):
 
 
 def main(llm_config_path: str = os.path.join('./', "config/llm_config_llama2_7b.json"),
-         dataset: str = "mixed_datasets", enable_cache=False, split=(0, 1),
+         dataset: str = "narrativeqa", enable_cache=False, cache_batch_size=1, split=(0, 1),
          test_latency=False,
          use_cpu_for_inference=False,
          verbose=False):

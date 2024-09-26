@@ -192,7 +192,7 @@ class CacheEngine:
                 position_ids = orig_position_ids + position_ids
 
             # print(orig_position_ids)
-            return input_ids, position_ids, cache_time, cache ,hit_rate,miss_rate
+            return input_ids, position_ids, cache_time, cache , hit_rate, miss_rate
     
     # def evict(self, evicting_ratio ):
     #     cache = self.prompt_cache.cache
