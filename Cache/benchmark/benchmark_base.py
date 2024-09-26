@@ -12,7 +12,7 @@ SCHEMA_FILE_DIRECTORY = "./benchmark/schema"
 DATASET_LIST = ["squad_v2", "multi_news", "wiki_qa", "pubmed_qa", "ms_marco", "narrativeqa", "qasper",
                 "multifieldqa_en", "hotpotqa", "2wikimqa", "musique", "dureader", "gov_report", "qmsum", "multi_news_long",
                 "vcsum", "trec", "triviaqa", "samsum", "lsht", "passage_count", "passage_retrieval_en", "lcc",
-                "repobench-p","mixed_datasets"]
+                "repobench-p","mixed_dataset_all"]
 
 DATASET_SUBSET = {
     "pubmed_qa": ["pqa_artificial", "pqa_labeled", "pqa_unlabeled"],

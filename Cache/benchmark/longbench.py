@@ -93,9 +93,9 @@ class LongBench(Benchmark):
         # self.dataset = load_dataset('THUDM/LongBench', self.dataset_name)
         self.dataset = load_from_disk(os.path.join(LOCAL_DIR, self.dataset_name))
         count = 0
-        # for split in self.dataset.values():
-        #     for item in split:
-        for item in self.dataset:
+        for split in self.dataset.values():
+            for item in split:
+        # for item in self.dataset:
                 if limit_entries is not None and count >= limit_entries:
                     break
                 id = item["_id"]

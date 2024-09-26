@@ -40,7 +40,7 @@ class Eval:
             # need accelerate and bitsandbytes
             # self.lm_for_caching = Llama2(name=self.llm_config['name'], device_map="auto", load_in_8bit=True)
             
-            self.lm_for_caching = Llama2(name=self.llm_config['name'], device_map="cuda:0")
+            self.lm_for_caching = Llama2(name=self.llm_config['name'], device_map="cuda:1")
             
         # elif "falcon" in self.model_name:
         #     self.model_name = "falcon"
@@ -62,7 +62,7 @@ class Eval:
             self.lm = self.lm_for_caching
 
         self.cache_engine = CacheEngine(self.llm_config.get("max_ctx_length", 4096), self.lm_for_caching,
-                                        target_device=self.lm.device,sharing_ratio=self.sharing_ratio,evicting_ratio=self.evicting_ratio)
+                                        target_device=self.lm.device, sharing_ratio=self.sharing_ratio,evicting_ratio=self.evicting_ratio)
         self.gen_engine = GenerationEngine(self.lm)
         self.preproc = [
             # CompactSpaces(),
@@ -155,6 +155,9 @@ class Eval:
 
             case "repobench-p":
                 self.dataset = LongBench("repobench-p")
+            
+            case "mixed_dataset_all":
+                self.dataset = LongBench("mixed_dataset_all")
 
         
         print("initiating dataset")
@@ -193,7 +196,7 @@ class Eval:
 
             no_cache = not self.enable_cache
 
-            token_ids, position_ids, cache_time, cache = self.cache_engine.process(prompt, no_cache=no_cache,
+            token_ids, position_ids, cache_time, cache , hit_rate , miss_rate = self.cache_engine.process(prompt, no_cache=no_cache,
                                                                                    return_full_position_ids=self.lm.use_full_position_ids)
 
             if no_cache:
@@ -222,6 +225,8 @@ class Eval:
             result = {
                 "cache_time": cache_time,
                 "response_time": response_time,
+                "hit_rate": hit_rate,
+                "miss_rate": miss_rate,
             }
             print(result)
             self.store_results(result)
@@ -249,7 +254,7 @@ class Eval:
                 print(entry.prompt)
                 prompt = Prompt(entry.prompt, self.preproc)
                 no_cache = not self.enable_cache
-                token_ids, position_ids, cache_time, cache = self.cache_engine.process(prompt, no_cache=no_cache,
+                token_ids, position_ids, cache_time, cache , hit_rate, miss_rate = self.cache_engine.process(prompt, no_cache=no_cache,
                                                                                        return_full_position_ids=self.lm.use_full_position_ids)
                 if no_cache:
                     assert cache is None
@@ -282,12 +287,14 @@ class Eval:
                     "cache_time": cache_time,
                     "response_time": response_time,
                     "answers": entry.answer,
-                    "response": resp
+                    "response": resp,
+                    "hit_rate": hit_rate,
+                    "miss_rate": miss_rate,
                 }
                 self.store_results(result, split)
                 print("\n")
 
-            self.cache_engine.remove_all_schemas()
+            # self.cache_engine.remove_all_schemas()
 
 
 def seed_everything(seed):

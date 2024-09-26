@@ -25,5 +25,5 @@
     "wiki_qa": 128,
     "pubmd_qa": 128,
     "ms_marco": 32,
-    "mixed_datasets": 32
+    "mixed_dataset_all": 32
 }
