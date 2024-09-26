@@ -163,7 +163,7 @@ class CacheEngine:
 
             vv = list(range(len(orig_position_ids)))
 
-            return orig_input_ids, vv, cache_time, None,0.0,0.0
+            return orig_input_ids, vv, cache_time, None, 0.0, 0.0
         else:
             print("using cache")
             used_seq_caches = []
