@@ -21,19 +21,31 @@ BENCHMARK_PATH = "./benchmark"
 
 
 class Eval:
-    def __init__(self, llm_config_path, dataset, enable_cache, use_cpu_for_inference=False,sharing_ratio=0.2, evicting_ratio=0.1):
+    def __init__(self, llm_config_path, dataset, enable_cache, 
+                 use_cpu_for_inference=False,sharing_ratio=0.2, evicting_ratio=0.1,mixed_dataset=None):
+        
         with open("./config/dataset_maxlen.json", 'r') as f:
             self.dataset_maxlen = json.load(f)
         print("start to loading llm config")
+        
         with open(llm_config_path, 'r') as f:
             self.llm_config = json.load(f)
         print("finish loading llm config")
+        
         self.enable_cache = enable_cache
         self.use_cpu_for_inference = use_cpu_for_inference
+        
         self.sharing_ratio = sharing_ratio
         print("sharing ratio: ", self.sharing_ratio)
+        
         self.evicting_ratio = evicting_ratio
         print("evicting ratio: ", self.evicting_ratio)
+        
+        self.mixed_dataset = mixed_dataset
+        if mixed_dataset:
+            self.mixed_dataset = LongBench(mixed_dataset)
+            self.mixed_dataset.init()
+            
         self.model_name = self.llm_config["name"]
         if "Llama" in self.model_name:
             self.model_name = "Llama"
@@ -68,16 +80,6 @@ class Eval:
             # CompactSpaces(),
             self.lm.get_formatter()
         ]
-
-        # self.parameter = GenerationParameters(
-        #     temperature=0.1,
-        #     repetition_penalty=1.17,
-        #     top_p=0.95,
-        #     top_k=-1,
-        #     max_new_tokens=512,
-        #     stop_token_ids=self.lm.stop_token_ids,
-        #     stop_str=self.lm.stop_str
-        # )
 
         self.parameter = GenerationParameters(
             temperature=1.0,
@@ -170,7 +172,32 @@ class Eval:
         if not os.path.exists(self.result_directory):
             os.makedirs(self.result_directory)
 
+        self.hitrate_directory = os.path.join(BENCHMARK_PATH, "hitrate",
+                                             f"{self.model_name}-{self.dataset.dataset_name}")
+        if not os.path.exists(self.hitrate_directory):
+            os.makedirs(self.hitrate_directory)
+        
         self.result_file_suffix = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    
+    def calculate_match_rate(self):
+        if not self.mixed_dataset:
+            raise ValueError("No mixed dataset is provided")
+        # calculate the match rate
+        mixed_prompts = set(entry.prompt for entry in self.mixed_dataset.entries)
+        dataset_prompts = set(entry.prompt for entry in self.dataset.entries)
+
+        matches = mixed_prompts.intersection(dataset_prompts)
+        match_rate = len(matches) / len(dataset_prompts)
+        
+        self.store_match_rate(match_rate)
+        
+    def store_match_rate(self, match_rate):
+        if self.enable_cache:
+            prefix = "with_cache"
+        else:
+            prefix = "no_cache"
+        with open(os.path.join(self.hitrate_directory, f"{prefix}_match_rate_{self.result_file_suffix}.json"), "w") as f:
+            json.dump({"match_rate": match_rate}, f)
 
     def store_results(self, results, split):
         if self.enable_cache:
@@ -196,7 +223,7 @@ class Eval:
 
             no_cache = not self.enable_cache
 
-            token_ids, position_ids, cache_time, cache , hit_rate , miss_rate = self.cache_engine.process(prompt, no_cache=no_cache,
+            token_ids, position_ids, cache_time, cache  = self.cache_engine.process(prompt, no_cache=no_cache,
                                                                                    return_full_position_ids=self.lm.use_full_position_ids)
 
             if no_cache:
@@ -225,8 +252,6 @@ class Eval:
             result = {
                 "cache_time": cache_time,
                 "response_time": response_time,
-                "hit_rate": hit_rate,
-                "miss_rate": miss_rate,
             }
             print(result)
             self.store_results(result)
@@ -243,6 +268,7 @@ class Eval:
 
         for i in tqdm(range(start, end)):
             entries = self.dataset.get_query((i, i + 1))
+            # entries获取的是一个list，里面包含一个Entry对象，entry对象包含了prompt, schema, answer等信息
             for entry in entries:
                 schema_file_path = os.path.join(SCHEMA_FILE_DIRECTORY, self.dataset.dataset_name, entry.schema)
                 print(schema_file_path)
@@ -254,7 +280,7 @@ class Eval:
                 print(entry.prompt)
                 prompt = Prompt(entry.prompt, self.preproc)
                 no_cache = not self.enable_cache
-                token_ids, position_ids, cache_time, cache , hit_rate, miss_rate = self.cache_engine.process(prompt, no_cache=no_cache,
+                token_ids, position_ids, cache_time, cache = self.cache_engine.process(prompt, no_cache=no_cache,
                                                                                        return_full_position_ids=self.lm.use_full_position_ids)
                 if no_cache:
                     assert cache is None
@@ -288,8 +314,6 @@ class Eval:
                     "response_time": response_time,
                     "answers": entry.answer,
                     "response": resp,
-                    "hit_rate": hit_rate,
-                    "miss_rate": miss_rate,
                 }
                 self.store_results(result, split)
                 print("\n")
@@ -308,20 +332,25 @@ def seed_everything(seed):
 
 
 def main(llm_config_path: str = os.path.join('./', "config/llm_config_llama2_7b.json"),
-         dataset: str = "narrativeqa", enable_cache=False, cache_batch_size=1, split=(0, 1),
+         dataset: str = "narrativeqa", enable_cache=False, split=(0, 1),
          test_latency=False,
          use_cpu_for_inference=False,
-         verbose=False):
+         verbose=False
+         ):
     print("running main")
     seed_everything(42)
     print("loading eval")
     eval = Eval(llm_config_path, dataset, enable_cache, use_cpu_for_inference,
-                sharing_ratio=args.sharing_ratio, evicting_ratio=args.evicting_ratio)
+                sharing_ratio=args.sharing_ratio, evicting_ratio=args.evicting_ratio, mixed_dataset=args.mixed_dataset)
     
     if test_latency:
         eval.run_latency_eval()
     else:
         eval.run(split, verbose)
+    
+    if args.mixed_dataset:
+        eval.calculate_match_rate()
+    
 
 if __name__ == "__main__":
     
@@ -330,6 +359,8 @@ if __name__ == "__main__":
     parser.add_argument('--sharing_ratio', type=float, default=0.2, help="set the sharing ratio (a float between 0 and 1)")
    
     parser.add_argument('--evicting_ratio', type=float, default=0.1, help="set the evicting ratio (a float between 0 and 1)")
+    
+    parser.add_argument('--mixed_dataset', type = str, default = None, help="set the mixed dataset name")
     
     args = parser.parse_args()
     

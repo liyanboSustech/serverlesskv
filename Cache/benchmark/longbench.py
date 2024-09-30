@@ -52,8 +52,8 @@
 
 import re
 
-from .benchmark_base import Benchmark, Entry
-from .utils import XMLSchemaBuilder
+from benchmark_base import Benchmark, Entry
+from utils import XMLSchemaBuilder
 from datasets import load_dataset
 from datasets import load_from_disk
 import os
@@ -143,4 +143,4 @@ if __name__ == '__main__':
     sq = LongBench('narrativeqa')
     sq.init()
     print(sq.get_entry_count())
-    print(sq.get_query((100, 101)))
+    print(sq.get_query((99, 101)))

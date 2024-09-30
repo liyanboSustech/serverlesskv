@@ -130,11 +130,13 @@ class LanguageModel(abc.ABC):
 
     def encode(self, text: str) -> List[int]:
         # Warning: this is a hack to remove bos_token
-        token_ids = self.hf_tokenizer.encode(text, add_special_tokens=False)
+        print("55555555555")
+        token_ids = self.hf_tokenizer.encode(text)
+        print("66666666666")
         return token_ids
 
     def decode(self, token_ids: List[int]) -> str:
-        return self.hf_tokenizer.decode(token_ids, skip_special_tokens=False, spaces_between_special_tokens=False)
+        return self.hf_tokenizer.decode(token_ids, spaces_between_special_tokens=False)
 
     @property
     def unk_token(self) -> str:

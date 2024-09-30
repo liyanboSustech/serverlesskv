@@ -539,5 +539,4 @@ class Schema(Module):
 
     def __init__(self, spec: Union[str, lxml.etree.Element], lm: LanguageModel, max_tokens: Optional[int] = None):
         super().__init__(0, spec, lm, is_root=True, max_tokens=max_tokens)
-
         self.lm = lm

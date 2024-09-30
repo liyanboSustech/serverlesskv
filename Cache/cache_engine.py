@@ -315,21 +315,9 @@ class SchemaCache:
     def get_cache_and_hit_rate(self, seq: TokenSequence) -> Tuple[Optional[TokenSequenceCache], float, float]:
         seq_id = id(seq)
         if seq_id not in self.cache_l1:
-            print("Don't hit the cache")
-            self.miss_count += 1  # 记录未命中
-            total_accesses = self.hit_count + self.miss_count
-            hit_rate = self.hit_count / total_accesses if total_accesses > 0 else 0
-            miss_rate = self.miss_count / total_accesses if total_accesses > 0 else 0
-            print(f"Hit Rate: {hit_rate:.2f}, Miss Rate: {miss_rate:.2f}")  # 输出当前命中率和未命中率
-            return None , hit_rate , miss_rate
+            return None 
         else:
-            print("Hit the cache")
-            self.hit_count += 1  # 记录命中
-            total_accesses = self.hit_count + self.miss_count
-            hit_rate = self.hit_count / total_accesses if total_accesses > 0 else 0
-            miss_rate = self.miss_count / total_accesses if total_accesses > 0 else 0
-            print(f"Hit Rate: {hit_rate:.2f}, Miss Rate: {miss_rate:.2f}")  # 输出当前命中率和未命中率
-            return self.cache_l1[seq_id] , hit_rate , miss_rate
+            return self.cache_l1[seq_id] 
 
     # def get_cache_l2(self, seq1: TokenSequence, seq2: TokenSequence) -> Optional[
     #     Tuple[TokenSequenceCache, TokenSequenceCache]]:

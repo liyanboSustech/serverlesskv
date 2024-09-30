@@ -35,13 +35,10 @@ class CacheEngine:
                 batch_size: int = 1,
                 max_tokens: Optional[int] = None,
                 no_cache: bool = False):
-
         if type(schema) == str:
             schema = Schema(schema, self.lm, max_tokens=max_tokens)
-
         if schema.name in self.schemas:
             raise ValueError(f'There is already a schema named {schema.name} in the cache')
-
         self.schemas[schema.name] = SchemaCache(schema, self.lm, batch_size, target_device=self.target_device,
                                                 no_cache=no_cache)
 
@@ -163,13 +160,13 @@ class CacheEngine:
 
             vv = list(range(len(orig_position_ids)))
 
-            return orig_input_ids, vv, cache_time, None, 0.0, 0.0
+            return orig_input_ids, vv, cache_time, None
         else:
             print("using cache")
             used_seq_caches = []
 
             for s in used_sequences:
-                seq_cache ,hit_rate,miss_rate = cached.get_cache_and_hit_rate(s)
+                seq_cache = cached.get_cache_and_hit_rate(s)
 
                 seq_cache.inc_usage_counter()
                 used_seq_caches.append(seq_cache)
@@ -192,7 +189,7 @@ class CacheEngine:
                 position_ids = orig_position_ids + position_ids
 
             # print(orig_position_ids)
-            return input_ids, position_ids, cache_time, cache , hit_rate, miss_rate
+            return input_ids, position_ids, cache_time, cache
     
     # def evict(self, evicting_ratio ):
     #     cache = self.prompt_cache.cache
